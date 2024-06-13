@@ -499,6 +499,7 @@ const onCreateClicked = async function() {
     });
 };
 
+/*************************************/
 async function takeScreenshot(filter) {
     try {
       const dataUrl = await new Promise((resolve, reject) => {
@@ -521,7 +522,7 @@ async function takeScreenshot(filter) {
       console.error('Error taking screenshot:', error);
     }
   }
-
+//function added by Roy
 /******************************************************************************/
 
 const onPickClicked = function() {
