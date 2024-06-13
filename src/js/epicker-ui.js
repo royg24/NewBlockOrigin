@@ -477,6 +477,7 @@ const onPreviewClicked = function() {
 
 /******************************************************************************/
 
+//screnshot added in chrom build
 const onCreateClicked = function() {
     const candidate = filterFromTextarea();
     const filter = userFilterFromCandidate(candidate);
