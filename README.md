@@ -54,7 +54,7 @@ Ads, "unintrusive" or not, are just the visible portion of the privacy-invading 
 
 ## Documentation
 <h1>
- <a href="https://docs.google.com/document/d/1RBbdmPx6-u5IOPMKGQYowtCc6C3bOMfaXiD0zxTvWe0/edit">Documentation</a>
+ <a href="https://docs.google.com/document/d/1RBbdmPx6-u5IOPMKGQYowtCc6C3bOMfaXiD0zxTvWe0/edit">Documentation of NewBlockOrigin</a>
 </h1>
 
 <table>
