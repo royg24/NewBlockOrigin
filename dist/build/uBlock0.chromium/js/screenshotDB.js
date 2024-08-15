@@ -7,6 +7,9 @@ window.shimIndexedDB;
 
 let request = indexedDB.open('screenshotDB', 1);
 let db = null;
+const modal = document.getElementById('myModal');
+const modalImage = document.getElementById('modalImage');
+const closeBtn = document.getElementsByClassName('close')[0];
 
     request.onerror = (event) =>{
         alert("an error was occured in indexedDB");
@@ -106,7 +109,44 @@ let db = null;
                 reject("Failed to check for record: " + event.target.error);
             };
         });
-        
+     
+    }
+
+    export async function showScreenshotFromDB(name) {
+        name = name.trim('\n');
+        const tx = db.transaction("screenshots", "readonly");
+        const store = tx.objectStore("screenshots");
+    
+        return new Promise((resolve, reject) => {
+            const req = store.get(name);
+    
+            req.onsuccess = async () => {
+                console.log("Screenshot pulled");
+                const imageURL = await blobToURL(req.result.blob);
+                modalImage.src = imageURL;
+                modal.style.display = "block";
+            };
+    
+            req.onerror = (event) => {
+                console.error("Request error: ", event.target.error);
+                reject("Request error: " + event.target.error);
+            };
+    
+            tx.oncomplete = () => {
+                console.log("Transaction completed successfully");
+                resolve("Record added successfully");
+            };
+    
+            tx.onerror = (event) => {
+                console.error("Transaction failed", event.target.error);
+                reject("Transaction failed: " + event.target.error);
+            };
+    
+            tx.onabort = (event) => {
+                console.error("Transaction aborted", event.target.error);
+                reject("Transaction aborted: " + event.target.error);
+            };
+        });
     }
     
     

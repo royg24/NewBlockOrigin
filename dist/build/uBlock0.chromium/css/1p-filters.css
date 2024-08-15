@@ -36,7 +36,9 @@ html {
   }
   
   .toggle-button-gutter,
-  .trash-button-gutter {
+  .trash-button-gutter,
+  .view-button-gutter
+  {
     width: 40px;
     height: 40px;
     text-align: right;
@@ -104,3 +106,69 @@ html {
   .trash-button:hover {
     background-color: rgba(91, 94, 90, 0.562);
   }
+
+  .view-button {
+    width: 30px;
+    height: 14px;
+    font-size: 13px;
+    text-align: center;
+    padding: 0;
+    line-height: 20px;
+    border: none;
+    background: none;
+    cursor: pointer;
+    border: 2px solid #ccc;
+    border-radius: 4px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: black;
+    background-color: rgba(185, 190, 185, 0.562);
+  }
+  .view-button::before {
+    content: "👁️";
+  }
+  .view-button:hover {
+    background-color: rgba(91, 94, 90, 0.562);
+  }
+
+   /* Modal styles */
+   .modal {
+    display: none; /* Hidden by default */
+    position: fixed; /* Stay in place */
+    z-index: 1; /* Sit on top */
+    left: 0;
+    top: 0;
+    width: 100%; /* Full width */
+    height: 100%; /* Full height */
+    overflow: auto; /* Enable scroll if needed */
+    background-color: rgba(0, 0, 0, 0.5); /* Black w/ opacity */
+}
+.modal-content {
+    background-color: #fefefe;
+    margin: auto;
+    padding: 0px;
+    border: 1px solid #888;
+    width: 60vw; /* Width as a percentage of viewport width */
+    height: 60vh; /* Height as a percentage of viewport height */
+    max-width: 90vw; /* Maximum width */
+    max-height: 90vh; /* Maximum height */
+    position: relative;
+}
+.close {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+}
+.close:hover,
+.close:focus {
+    color: black;
+    text-decoration: none;
+}
+img {
+    width: 100%; /* Scale image to fit modal width */
+    height: auto; /* Maintain aspect ratio */
+    max-height: 80vh; /* Limit height to viewport height */
+}

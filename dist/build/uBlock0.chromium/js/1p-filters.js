@@ -42,6 +42,8 @@ const cmEditor = CodeMirror(qs$("#userFilters"), {
     "CodeMirror-lintgutter",
     "toggle-button-gutter",
     "trash-button-gutter",
+    "view-button-gutter",
+
   ],
   lineNumbers: true,
   lineWrapping: true,
@@ -67,6 +69,23 @@ function helperIsLineWithDate(lineContent) {
   const datePattern = /^! \d{4}-\d{2}-\d{2}/;
   return datePattern.test(lineContent.trim());
 }
+
+function createViewButton(lineNumber) {
+  const button = document.createElement("radio-button");
+  button.className = "view-button";
+
+  const lineContent = cmEditor.getLine(lineNumber);
+  if (helperIsLineWithDate(lineContent)) return null;
+
+  button.addEventListener("click",async function () {
+    console.log(`View button clicked on line ${lineNumber}: ${lineContent}`);
+    // Add your functionality here for the view button.
+    await screenshotDB.showScreenshotFromDB(cmEditor.getLine(lineNumber));
+  });
+
+  return button;
+}
+
 
 // Function to create a toggle button element
 function createToggleButton(lineNumber) {
@@ -134,8 +153,11 @@ function updateButtons() {
     if (lineContent && lineContent.trim()) {
       const buttonElement = createToggleButton(i);
       const trashButtonElement = createTrashButton(i);
+      const viewButtonElement = createViewButton(i);
+
       cmEditor.setGutterMarker(i, "toggle-button-gutter", buttonElement);
       cmEditor.setGutterMarker(i, "trash-button-gutter", trashButtonElement);
+      cmEditor.setGutterMarker(i, "view-button-gutter", viewButtonElement);
     } else {
       cmEditor.setGutterMarker(i, "toggle-button-gutter", null);
     }
