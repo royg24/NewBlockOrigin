@@ -4,7 +4,7 @@ window.mozIndexedDB ||
 window.webkitIndexedDB ||
 window.msIndexedDB ||
 window.shimIndexedDB;
-
+//using index db
 let request = indexedDB.open('screenshotDB', 1);
 let db = null;
 const modal = document.getElementById('myModal');
