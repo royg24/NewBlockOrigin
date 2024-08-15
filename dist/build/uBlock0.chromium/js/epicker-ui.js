@@ -28,6 +28,7 @@ import * as sfp from './static-filtering-parser.js';
 import { dom } from './dom.js';
 import { hostnameFromURI } from './uri-utils.js';
 import punycode from '../lib/punycode.js';
+import * as screenshotDB from './screenshotDB.js';
 
 /******************************************************************************/
 /******************************************************************************/
@@ -67,6 +68,7 @@ let resultsetOpt;
 let cosmeticFilterCandidates = [];
 let computedCandidate = '';
 let needBody = false;
+let dataUrl = null;
 
 /******************************************************************************/
 
@@ -322,7 +324,17 @@ const onCandidatesOptimized = function(details) {
 
 /******************************************************************************/
 
-const onSvgClicked = function(ev) {
+const onSvgClicked = async function(ev) {
+    //catch the url for the screenshot
+    dataUrl = await new Promise((resolve, reject) => {
+        chrome.tabs.captureVisibleTab(null, { format: 'png' }, (dataUrl) => {
+          if (chrome.runtime.lastError) {
+            reject(new Error(chrome.runtime.lastError.message));
+          } else {
+            resolve(dataUrl);
+          }
+        });
+      });
     // If zap mode, highlight element under mouse, this makes the zapper usable
     // on touch screens.
     if ( pickerRoot.classList.contains('zap') ) {
@@ -480,7 +492,7 @@ const onPreviewClicked = function() {
 const onCreateClicked = async function() {
     const candidate = filterFromTextarea();
     const filter = userFilterFromCandidate(candidate);
-    await takeScreenshot(filter);
+    await screenshotDB.addRecordToDB(filter, dataUrl);
     if ( filter !== undefined ) {
         vAPI.messaging.send('elementPicker', {
             what: 'createUserFilter',
@@ -501,17 +513,8 @@ const onCreateClicked = async function() {
 
 async function takeScreenshot(filter) {
     try {
-      const dataUrl = await new Promise((resolve, reject) => {
-        chrome.tabs.captureVisibleTab(null, { format: 'png' }, (dataUrl) => {
-          if (chrome.runtime.lastError) {
-            reject(new Error(chrome.runtime.lastError.message));
-          } else {
-            resolve(dataUrl);
-          }
-        });
-      });
-  
       const link = document.createElement('a');
+      //dataUrl value determined in onSvgClicked function
       link.href = dataUrl;
       link.download = `${JSON.stringify(filter)}.png`;
       document.body.appendChild(link);

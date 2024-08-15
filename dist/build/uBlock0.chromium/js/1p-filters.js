@@ -1,4 +1,4 @@
-/***************************
+/*******************************************************************************
 
     uBlock Origin - a comprehensive, efficient content blocker
     Copyright (C) 2014-present Raymond Hill
@@ -25,8 +25,9 @@ import "./codemirror/ubo-static-filtering.js";
 import { dom, qs$ } from "./dom.js";
 import { i18n$ } from "./i18n.js";
 import { onBroadcast } from "./broadcast.js";
+import * as screenshotDB from './screenshotDB.js';
 
-/**************************/
+/******************************************************************************/
 
 const cmEditor = CodeMirror(qs$("#userFilters"), {
   autoCloseBrackets: true,
@@ -147,9 +148,10 @@ function updateButtons() {
 // Initial update of buttons
 updateButtons();
 
-cmEditor.on("beforeChange", function (instance, change) {
+cmEditor.on("beforeChange", async function (instance, change) {
   console.log(instance);
   const from = change.from.line;
+  await screenshotDB.deleteRecordFromDB(cmEditor.getLine(from).trim('\n'));
   const addedLines = change.text.length - 1; // Subtract 1 to account for the original line
   const removedLines = change.to.line - change.from.line;
 
@@ -172,6 +174,123 @@ cmEditor.on("beforeChange", function (instance, change) {
 
 // Update buttons whenever content changes
 cmEditor.on("changes", updateButtons);
+
+// Template management
+let templates = loadTemplatesFromLocalStorage();
+
+document.getElementById("createTemplate").addEventListener("click", () => {
+  document.getElementById("createTemplateDialog").classList.remove("hidden");
+});
+
+document.getElementById("saveTemplate").addEventListener("click", saveTemplate);
+
+document.getElementById("cancelTemplate").addEventListener("click", () => {
+  document.getElementById("createTemplateDialog").classList.add("hidden");
+});
+
+document
+  .getElementById("deleteTemplate")
+  .addEventListener("click", deleteTemplate);
+
+document.getElementById("editTemplate").addEventListener("click", editTemplate);
+
+document
+  .getElementById("saveEditTemplate")
+  .addEventListener("click", saveEditedTemplate);
+
+document.getElementById("applyTemplate").addEventListener("click", () => {
+  const selectedTemplate = document.getElementById("templateList").value;
+  applyTemplate(selectedTemplate);
+});
+
+function saveTemplate() {
+  const templateName = document.getElementById("templateName").value;
+  if (templateName.trim() !== "") {
+    const filters = cmEditor.getValue().split("\n");
+    createTemplate(templateName, filters);
+    document.getElementById("createTemplateDialog").classList.add("hidden");
+    updateTemplateList(templateName);
+    saveTemplatesToLocalStorage();
+  }
+}
+
+function createTemplate(templateName, filters) {
+  const existingTemplate = templates.find((t) => t.name === templateName);
+  if (existingTemplate) {
+    existingTemplate.filters = filters;
+  } else {
+    templates.push({ name: templateName, filters });
+  }
+}
+
+function deleteTemplate() {
+  const selectedTemplate = document.getElementById("templateList").value;
+  templates = templates.filter((t) => t.name !== selectedTemplate);
+  updateTemplateList();
+  saveTemplatesToLocalStorage();
+}
+
+function editTemplate() {
+  const selectedTemplate = document.getElementById("templateList").value;
+  const template = templates.find((t) => t.name === selectedTemplate);
+  if (template) {
+    cmEditor.setValue(template.filters.join("\n"));
+    document.getElementById("saveEditTemplate").classList.remove("hidden");
+  }
+}
+
+function saveEditedTemplate() {
+  const selectedTemplate = document.getElementById("templateList").value;
+  const template = templates.find((t) => t.name === selectedTemplate);
+  if (template) {
+    const updatedFilters = cmEditor.getValue().split("\n");
+    template.filters = updatedFilters;
+    updateTemplateList(selectedTemplate);
+    document.getElementById("saveEditTemplate").classList.add("hidden");
+    saveTemplatesToLocalStorage();
+  }
+}
+
+function applyTemplate(templateName) {
+  const template = templates.find((t) => t.name === templateName);
+  if (template) {
+    cmEditor.setValue(template.filters.join("\n"));
+  } else {
+    cmEditor.setValue("");
+  }
+  updateTemplateList(templateName);
+  applyChanges();
+}
+
+function updateTemplateList(selectedTemplateName) {
+  const templateList = document.getElementById("templateList");
+  templateList.innerHTML = "";
+  templates.forEach((template) => {
+    const option = document.createElement("option");
+    option.value = template.name;
+    option.textContent = template.name;
+    templateList.appendChild(option);
+  });
+
+  // Set the selected template in the dropdown
+  if (selectedTemplateName) {
+    templateList.value = selectedTemplateName;
+  } else if (templates.length > 0) {
+    templateList.value = templates[0].name;
+  }
+}
+
+function saveTemplatesToLocalStorage() {
+  localStorage.setItem("templates", JSON.stringify(templates));
+}
+
+function loadTemplatesFromLocalStorage() {
+  const storedTemplates = localStorage.getItem("templates");
+  return storedTemplates ? JSON.parse(storedTemplates) : [];
+}
+
+// Initialize the template list with the first template selected if exists
+updateTemplateList(templates.length > 0 ? templates[0].name : null);
 
 {
   let hintUpdateToken = 0;
@@ -206,7 +325,7 @@ vAPI.messaging
     cmEditor.setOption("trustedScriptletTokens", tokens);
   });
 
-/**************************/
+/******************************************************************************/
 
 let originalState = {
   enabled: true,
@@ -233,14 +352,14 @@ function currentStateChanged() {
 
 function getEditorText() {
   const text = cmEditor.getValue().replace(/\s+$/, "");
-  return text === '' ? text : `${text}\n`;
+  return text === "" ? text : `${text}\n`;
 }
 
 function setEditorText(text) {
   cmEditor.setValue(text.replace(/\s+$/, "") + "\n\n");
 }
 
-/**************************/
+/******************************************************************************/
 
 function userFiltersChanged(details = {}) {
   const changed =
@@ -272,7 +391,7 @@ function userFiltersChanged(details = {}) {
   cmEditor.focus();
 }
 
-/**************************/
+/******************************************************************************/
 
 // https://github.com/gorhill/uBlock/issues/3704
 //   Merge changes to user filters occurring in the background with changes
@@ -330,7 +449,7 @@ function threeWayMerge(newContent) {
   return out.join("\n");
 }
 
-/**************************/
+/******************************************************************************/
 
 async function renderUserFilters(merge = false) {
   const details = await vAPI.messaging.send("dashboard", {
@@ -358,7 +477,7 @@ async function renderUserFilters(merge = false) {
   rememberCurrentState();
 }
 
-/**************************/
+/******************************************************************************/
 
 function handleImportFilePicker(ev) {
   const file = ev.target.files[0];
@@ -397,7 +516,7 @@ function startImportFilePicker() {
 
 dom.on("#importUserFiltersFromFile", "click", startImportFilePicker);
 
-/**************************/
+/******************************************************************************/
 
 function exportUserFiltersToFile() {
   const val = getEditorText();
@@ -413,7 +532,7 @@ function exportUserFiltersToFile() {
   });
 }
 
-/**************************/
+/******************************************************************************/
 
 async function applyChanges() {
   const state = getCurrentState();
@@ -440,7 +559,7 @@ function revertChanges() {
   userFiltersChanged();
 }
 
-/**************************/
+/******************************************************************************/
 
 function getCloudData() {
   return getEditorText();
@@ -459,7 +578,7 @@ function setCloudData(data, append) {
 self.cloud.onPush = getCloudData;
 self.cloud.onPull = setCloudData;
 
-/**************************/
+/******************************************************************************/
 
 self.wikilink = "https://github.com/gorhill/uBlock/wiki/Dashboard:-My-filters";
 
@@ -467,7 +586,7 @@ self.hasUnsavedData = function () {
   return currentStateChanged();
 };
 
-/**************************/
+/******************************************************************************/
 
 // Handle user interaction
 dom.on("#exportUserFiltersToFile", "click", exportUserFiltersToFile);
@@ -539,7 +658,7 @@ dom.on("#trustMyFilters input", "change", userFiltersChanged);
 cmEditor.on("changes", userFiltersChanged);
 CodeMirror.commands.save = applyChanges;
 
-/**************************/
+/******************************************************************************/
 
 //Shavit addition
 

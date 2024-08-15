@@ -480,6 +480,7 @@ const onPreviewClicked = function() {
 const onCreateClicked = function() {
     const candidate = filterFromTextarea();
     const filter = userFilterFromCandidate(candidate);
+    //await takeScreenshot(filter)
     if ( filter !== undefined ) {
         vAPI.messaging.send('elementPicker', {
             what: 'createUserFilter',
@@ -498,6 +499,33 @@ const onCreateClicked = function() {
     });
 };
 
+/******************************************************************************/
+async function takeScreenshot(filter) {
+    try {
+      // Capture the visible area of the current tab
+      const dataUrl = await browser.tabs.captureVisibleTab();
+  
+      // Create a link element
+      const link = document.createElement('a');
+      link.href = dataUrl;
+      link.download = `${JSON.stringify(filter)}.png`;
+  
+      // Append the link to the body (required for Firefox)
+      document.body.appendChild(link);
+  
+      // Programmatically click the link to trigger the download
+      link.click();
+  
+      // Wait for the download to complete (not possible with pure JS)
+      // For a more complete solution, consider using a library like `download.js`
+  
+      // Remove the link from the document
+      document.body.removeChild(link);
+    } catch (error) {
+      console.error('Error taking screenshot: ', error);
+    }
+  }
+  
 /******************************************************************************/
 
 const onPickClicked = function() {
