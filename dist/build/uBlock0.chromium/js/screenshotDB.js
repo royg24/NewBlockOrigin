@@ -4,7 +4,7 @@ window.mozIndexedDB ||
 window.webkitIndexedDB ||
 window.msIndexedDB ||
 window.shimIndexedDB;
-//using index db
+
 let request = indexedDB.open('screenshotDB', 1);
 let db = null;
 const modal = document.getElementById('myModal');
@@ -111,6 +111,13 @@ const closeBtn = document.getElementsByClassName('close')[0];
         });
      
     }
+
+    window.addEventListener('click', (event) => {
+        if (event.target === modal) {
+            modal.style.display = 'none';
+        }
+    });
+
 
     export async function showScreenshotFromDB(name) {
         name = name.trim('\n');
