@@ -55,6 +55,7 @@ const cmEditor = CodeMirror(qs$("#userFilters"), {
 });
 
 let toggleStates = [];
+let toDelete = false;
 
 function helperIsLineCommented(lineNumber) {
   const lineContent = cmEditor.getLine(lineNumber);
@@ -73,6 +74,16 @@ function helperIsLineWithDate(lineContent) {
 function createViewButton(lineNumber) {
   const button = document.createElement("radio-button");
   button.className = "view-button";
+
+  const viewTooltip = CreateTooltipElement('viewTooltip',  'View');
+  button.addEventListener('mouseenter', function(){
+      viewTooltip.style.display = 'block';
+      positionTooltip(button, viewTooltip);
+  });
+  
+  button.addEventListener('mouseleave', function(){
+      viewTooltip.style.display = 'none';
+  });
 
   const lineContent = cmEditor.getLine(lineNumber);
   if (helperIsLineWithDate(lineContent)) return null;
@@ -93,16 +104,25 @@ function createToggleButton(lineNumber) {
   button.className = "filter-button off";
 
   const lineContent = cmEditor.getLine(lineNumber);
+  const toggleTooltip = CreateTooltipElement('toggleTooltip',  '');
   if (helperIsLineWithDate(lineContent)) return null;
 
   function updateButtonAppearance() {
     if (toggleStates[lineNumber]) {
+      //filter disactivated
       button.classList.add("on");
       button.classList.remove("off");
+      toggleTooltip.textContent = "Enable";
+      //TODO
+      //make view button disable
+      
     } else {
+      //filter activated
       button.classList.add("off");
       button.classList.remove("on");
+      toggleTooltip.textContent = "Disable";
     }
+    toggleTooltip.style.display = 'none';
   }
 
   if (typeof toggleStates[lineNumber] === "undefined") {
@@ -111,7 +131,17 @@ function createToggleButton(lineNumber) {
 
   updateButtonAppearance();
 
+  button.addEventListener('mouseenter', function(){
+      toggleTooltip.style.display = 'block';
+      positionTooltip(button, toggleTooltip);
+  });
+  
+  button.addEventListener('mouseleave', function(){
+      toggleTooltip.style.display = 'none';
+  });
+
   button.addEventListener("click", function () {
+    toDelete = false;
     toggleStates[lineNumber] = !toggleStates[lineNumber];
     cmEditor.setCursor({ line: lineNumber, ch: 0 }); // Move cursor to the beginning of the line
     cmEditor.execCommand("toggleComment");
@@ -126,10 +156,22 @@ function createTrashButton(lineNumber) {
   const button = document.createElement("radio-button");
   button.className = "trash-button";
 
+  const trashTooltip = CreateTooltipElement('trashTooltip',  'Delete');
+  button.addEventListener('mouseenter', function(){
+      trashTooltip.style.display = 'block';
+      positionTooltip(button, trashTooltip);
+  });
+  
+  button.addEventListener('mouseleave', function(){
+      trashTooltip.style.display = 'none';
+  });
+
   const lineContent = cmEditor.getLine(lineNumber);
   if (helperIsLineWithDate(lineContent)) return null;
 
   button.addEventListener("click", function () {
+    toDelete = true;
+    trashTooltip.style.display = 'none';
     cmEditor.replaceRange(
       "",
       { line: lineNumber, ch: 0 },
@@ -140,6 +182,21 @@ function createTrashButton(lineNumber) {
   });
 
   return button;
+}
+
+function CreateTooltipElement(id, message){
+  const tooltip = document.createElement('div');
+  tooltip.id = id;
+  tooltip.className = 'tooltip';
+  tooltip.textContent = message;
+  document.body.appendChild(tooltip); // Append to body or a container element
+  return tooltip;
+}
+
+function positionTooltip(button, tooltip){
+  const rect = button.getBoundingClientRect();
+  tooltip.style.left = rect.left + 'px';
+  tooltip.style.top = (rect.top - tooltip.offsetHeight) + 'px';
 }
 
 // Function to update buttons in the gutter
@@ -173,7 +230,11 @@ updateButtons();
 cmEditor.on("beforeChange", async function (instance, change) {
   console.log(instance);
   const from = change.from.line;
-  await screenshotDB.deleteRecordFromDB(cmEditor.getLine(from).trim('\n'));
+  const lineText = cmEditor.getLine(from);
+  if(toDelete)
+  {
+    await screenshotDB.deleteRecordFromDB(lineText.trim('\n'));
+  }
   const addedLines = change.text.length - 1; // Subtract 1 to account for the original line
   const removedLines = change.to.line - change.from.line;
 

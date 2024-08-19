@@ -173,3 +173,30 @@ img {
     height: auto; /* Maintain aspect ratio */
     max-height: 80vh; /* Limit height to viewport height */
 }
+
+/* Tooltip container */
+.tooltip {
+  position: absolute;
+  background-color: #f9f9f9; /* Light background */
+  color: #333; /* Dark text color */
+  text-align: center;
+  padding: 5px 10px; /* Padding around the text */
+  border-radius: 4px; /* Rounded corners */
+  border: 1px solid #ccc; /* Border around the tooltip */
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); /* Subtle shadow for depth */
+  font-size: 12px; /* Small font size */
+  z-index: 1000; /* Make sure it appears on top */
+  display: none; /* Hidden by default */
+}
+
+/* Arrow at the bottom of the tooltip */
+.tooltip:hover {
+  content: '';
+  position: absolute;
+  top: 100%; /* Position at the bottom of the tooltip */
+  left: 50%;
+  margin-left: -5px; /* Center the arrow */
+  border-width: 5px;
+  border-style: solid;
+  border-color: #f9f9f9 transparent transparent transparent; /* Arrow color */
+}
