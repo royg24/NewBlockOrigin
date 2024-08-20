@@ -129,7 +129,11 @@ const closeBtn = document.getElementsByClassName('close')[0];
     
             req.onsuccess = async () => {
                 console.log("Screenshot pulled");
-                const imageURL = await blobToURL(req.result.blob);
+                let imageURL = "https://raw.githubusercontent.com/royg24/NewBlockOrigin/master/dist/build/uBlock0.chromium/assets/Images/unavailable.png";
+                if(req.result != undefined)
+                {
+                    imageURL = await blobToURL(req.result.blob);
+                } 
                 modalImage.src = imageURL;
                 modal.style.display = "block";
             };
