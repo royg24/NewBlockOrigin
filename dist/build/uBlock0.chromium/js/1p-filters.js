@@ -67,7 +67,11 @@ function helperIsLineCommented(lineNumber) {
 
 function helperIsLineWithDate(lineContent) {
   // Regex pattern to match a line that starts with a date in YYYY-MM-DD format
-  const datePattern = /^! \d{4}-\d{2}-\d{2}/;
+  // const datePattern = /^! \d{4}-\d{2}-\d{2}/;
+  // return datePattern.test(lineContent.trim());
+
+  const datePattern =
+    /^! \b(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\b \d{1,2}, \d{4}/;
   return datePattern.test(lineContent.trim());
 }
 

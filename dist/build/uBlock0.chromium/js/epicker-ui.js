@@ -511,20 +511,6 @@ const onCreateClicked = async function() {
     });
 };
 
-async function takeScreenshot(filter) {
-    try {
-      const link = document.createElement('a');
-      //dataUrl value determined in onSvgClicked function
-      link.href = dataUrl;
-      link.download = `${JSON.stringify(filter)}.png`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    } catch (error) {
-      console.error('Error taking screenshot:', error);
-    }
-  }
-
 /******************************************************************************/
 
 const onPickClicked = function() {
