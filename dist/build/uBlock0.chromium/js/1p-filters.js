@@ -25,7 +25,7 @@ import "./codemirror/ubo-static-filtering.js";
 import { dom, qs$ } from "./dom.js";
 import { i18n$ } from "./i18n.js";
 import { onBroadcast } from "./broadcast.js";
-import * as screenshotDB from './screenshotDB.js';
+import * as screenshotDB from "./screenshotDB.js";
 
 /******************************************************************************/
 
@@ -43,7 +43,6 @@ const cmEditor = CodeMirror(qs$("#userFilters"), {
     "toggle-button-gutter",
     "trash-button-gutter",
     "view-button-gutter",
-
   ],
   lineNumbers: true,
   lineWrapping: true,
@@ -53,7 +52,7 @@ const cmEditor = CodeMirror(qs$("#userFilters"), {
     nonEmpty: true,
   },
 });
-
+let templates = loadTemplatesFromLocalStorage();
 let toggleStates = [];
 let toDelete = false;
 
@@ -79,28 +78,25 @@ function createViewButton(lineNumber) {
   const button = document.createElement("radio-button");
   button.className = "view-button";
 
-  const viewTooltip = CreateTooltipElement('viewTooltip',  'View');
-  button.addEventListener('mouseenter', function(){
-      viewTooltip.style.display = 'block';
-      positionTooltip(button, viewTooltip);
+  const viewTooltip = CreateTooltipElement("viewTooltip", "View");
+  button.addEventListener("mouseenter", function () {
+    viewTooltip.style.display = "block";
+    positionTooltip(button, viewTooltip);
   });
-  
-  button.addEventListener('mouseleave', function(){
-      viewTooltip.style.display = 'none';
+
+  button.addEventListener("mouseleave", function () {
+    viewTooltip.style.display = "none";
   });
 
   const lineContent = cmEditor.getLine(lineNumber);
   if (helperIsLineWithDate(lineContent)) return null;
 
-  button.addEventListener("click",async function () {
-    console.log(`View button clicked on line ${lineNumber}: ${lineContent}`);
-    // Add your functionality here for the view button.
+  button.addEventListener("click", async function () {
     await screenshotDB.showScreenshotFromDB(cmEditor.getLine(lineNumber));
   });
 
   return button;
 }
-
 
 // Function to create a toggle button element
 function createToggleButton(lineNumber) {
@@ -108,7 +104,7 @@ function createToggleButton(lineNumber) {
   button.className = "filter-button off";
 
   const lineContent = cmEditor.getLine(lineNumber);
-  const toggleTooltip = CreateTooltipElement('toggleTooltip',  '');
+  const toggleTooltip = CreateTooltipElement("toggleTooltip", "");
   if (helperIsLineWithDate(lineContent)) return null;
 
   function updateButtonAppearance() {
@@ -119,14 +115,13 @@ function createToggleButton(lineNumber) {
       toggleTooltip.textContent = "Enable";
       //TODO
       //make view button disable
-      
     } else {
       //filter activated
       button.classList.add("off");
       button.classList.remove("on");
       toggleTooltip.textContent = "Disable";
     }
-    toggleTooltip.style.display = 'none';
+    toggleTooltip.style.display = "none";
   }
 
   if (typeof toggleStates[lineNumber] === "undefined") {
@@ -135,13 +130,13 @@ function createToggleButton(lineNumber) {
 
   updateButtonAppearance();
 
-  button.addEventListener('mouseenter', function(){
-      toggleTooltip.style.display = 'block';
-      positionTooltip(button, toggleTooltip);
+  button.addEventListener("mouseenter", function () {
+    toggleTooltip.style.display = "block";
+    positionTooltip(button, toggleTooltip);
   });
-  
-  button.addEventListener('mouseleave', function(){
-      toggleTooltip.style.display = 'none';
+
+  button.addEventListener("mouseleave", function () {
+    toggleTooltip.style.display = "none";
   });
 
   button.addEventListener("click", function () {
@@ -160,14 +155,14 @@ function createTrashButton(lineNumber) {
   const button = document.createElement("radio-button");
   button.className = "trash-button";
 
-  const trashTooltip = CreateTooltipElement('trashTooltip',  'Delete');
-  button.addEventListener('mouseenter', function(){
-      trashTooltip.style.display = 'block';
-      positionTooltip(button, trashTooltip);
+  const trashTooltip = CreateTooltipElement("trashTooltip", "Delete");
+  button.addEventListener("mouseenter", function () {
+    trashTooltip.style.display = "block";
+    positionTooltip(button, trashTooltip);
   });
-  
-  button.addEventListener('mouseleave', function(){
-      trashTooltip.style.display = 'none';
+
+  button.addEventListener("mouseleave", function () {
+    trashTooltip.style.display = "none";
   });
 
   const lineContent = cmEditor.getLine(lineNumber);
@@ -175,7 +170,7 @@ function createTrashButton(lineNumber) {
 
   button.addEventListener("click", function () {
     toDelete = true;
-    trashTooltip.style.display = 'none';
+    trashTooltip.style.display = "none";
     cmEditor.replaceRange(
       "",
       { line: lineNumber, ch: 0 },
@@ -183,24 +178,25 @@ function createTrashButton(lineNumber) {
     );
     updateButtons();
     applyChanges();
+    if (templates.length > 0) saveTemplatesToLocalStorage();
   });
 
   return button;
 }
 
-function CreateTooltipElement(id, message){
-  const tooltip = document.createElement('div');
+function CreateTooltipElement(id, message) {
+  const tooltip = document.createElement("div");
   tooltip.id = id;
-  tooltip.className = 'tooltip';
+  tooltip.className = "tooltip";
   tooltip.textContent = message;
   document.body.appendChild(tooltip); // Append to body or a container element
   return tooltip;
 }
 
-function positionTooltip(button, tooltip){
+function positionTooltip(button, tooltip) {
   const rect = button.getBoundingClientRect();
-  tooltip.style.left = rect.left + 'px';
-  tooltip.style.top = (rect.top - tooltip.offsetHeight) + 'px';
+  tooltip.style.left = rect.left + "px";
+  tooltip.style.top = rect.top - tooltip.offsetHeight + "px";
 }
 
 // Function to update buttons in the gutter
@@ -232,12 +228,10 @@ function updateButtons() {
 updateButtons();
 
 cmEditor.on("beforeChange", async function (instance, change) {
-  console.log(instance);
   const from = change.from.line;
   const lineText = cmEditor.getLine(from);
-  if(toDelete /* && line is not in any template */)
-  {
-    await screenshotDB.deleteRecordFromDB(lineText.trim('\n'));
+  if (toDelete) {
+    await screenshotDB.deleteRecordFromDB(lineText.trim("\n"));
   }
   const addedLines = change.text.length - 1; // Subtract 1 to account for the original line
   const removedLines = change.to.line - change.from.line;
@@ -256,15 +250,38 @@ cmEditor.on("beforeChange", async function (instance, change) {
     newToggleStates.splice(from, 0, ...Array(addedLines)); // Insert placeholders for new lines
   }
 
+  let newLinePlaceInChange = change.text.length - 3;
+
+  if (
+    templates.length > 0 &&
+    !templates[0].filters.includes(change.text[newLinePlaceInChange])
+  ) {
+    let newLinePlaceInMain = templates[0].filters.length - 2;
+    templates[0].filters = [...templates[0].filters];
+    templates[0].filters.splice(
+      newLinePlaceInMain,
+      0,
+      change.text[newLinePlaceInChange]
+    );
+    saveTemplatesToLocalStorage();
+  }
+
   toggleStates = newToggleStates; // Copy the new array back to toggleStates
 });
 
 // Update buttons whenever content changes
 cmEditor.on("changes", updateButtons);
 
-// Template management
-let templates = loadTemplatesFromLocalStorage();
+// Ensure there is at least one "Main Template" in the array
+function ensureMainTemplateExists(filters) {
+  let mainTemplate = templates.find((t) => t.name === "main");
+  if (!mainTemplate) {
+    templates.push({ name: "main", filters: filters });
+    saveTemplatesToLocalStorage(); // Save immediately if a new template was added
+  }
+}
 
+// Event listeners
 document.getElementById("createTemplate").addEventListener("click", () => {
   document.getElementById("createTemplateDialog").classList.remove("hidden");
 });
@@ -306,6 +323,7 @@ function createTemplate(templateName, filters) {
   if (existingTemplate) {
     existingTemplate.filters = filters;
   } else {
+    ensureMainTemplateExists(filters);
     templates.push({ name: templateName, filters });
   }
 }
@@ -339,6 +357,8 @@ function saveEditedTemplate() {
 }
 
 function applyTemplate(templateName) {
+  //if (templateName != "main") saveMainTemplate(); // Save unsaved changes to the main template before switching
+  templates = loadTemplatesFromLocalStorage();
   const template = templates.find((t) => t.name === templateName);
   if (template) {
     cmEditor.setValue(template.filters.join("\n"));
@@ -347,6 +367,7 @@ function applyTemplate(templateName) {
   }
   updateTemplateList(templateName);
   applyChanges();
+  saveCurrentTemplateName(templateName);
 }
 
 function updateTemplateList(selectedTemplateName) {
@@ -368,16 +389,61 @@ function updateTemplateList(selectedTemplateName) {
 }
 
 function saveTemplatesToLocalStorage() {
+  console.log("saving templates:", templates);
   localStorage.setItem("templates", JSON.stringify(templates));
 }
 
 function loadTemplatesFromLocalStorage() {
   const storedTemplates = localStorage.getItem("templates");
-  return storedTemplates ? JSON.parse(storedTemplates) : [];
+  const templates = storedTemplates ? JSON.parse(storedTemplates) : [];
+  console.log("loaded templates:", templates);
+  return templates;
 }
 
+function saveMainTemplate() {
+  templates[0].filters = cmEditor.getValue().split("\n");
+  saveTemplatesToLocalStorage();
+}
+
+function saveCurrentTemplateName(templateName) {
+  localStorage.setItem("currentTemplate", templateName);
+}
+
+function loadCurrentTemplateName() {
+  const storedTemplate = localStorage.getItem("currentTemplate");
+  return storedTemplate ? storedTemplate : ""; // Default to the main template if none is stored
+}
+/*
 // Initialize the template list with the first template selected if exists
-updateTemplateList(templates.length > 0 ? templates[0].name : null);
+let currentTemplateName = loadCurrentTemplateName();
+const isTemplateExists = templates.some((t) => t.name === currentTemplateName);
+
+if (!isTemplateExists) {
+  // If the template doesn't exist, fall back to the first available template or null
+  currentTemplateName = templates.length > 0 ? templates[0].name : null;
+}
+
+ updateTemplateList(currentTemplateName);
+
+if (currentTemplateName) {
+  applyTemplate(currentTemplateName);
+}
+*/
+document.addEventListener("DOMContentLoaded", () => {
+  let currentTemplateName = loadCurrentTemplateName();
+  templates = loadTemplatesFromLocalStorage(); // Loading templates here
+  const isTemplateExists = templates.some(
+    (t) => t.name === currentTemplateName
+  );
+
+  if (!isTemplateExists) {
+    currentTemplateName = templates.length > 0 ? templates[0].name : null;
+  }
+
+  if (currentTemplateName) {
+    applyTemplate(currentTemplateName);
+  }
+});
 
 {
   let hintUpdateToken = 0;
@@ -746,10 +812,3 @@ cmEditor.on("changes", userFiltersChanged);
 CodeMirror.commands.save = applyChanges;
 
 /******************************************************************************/
-
-//Shavit addition
-
-function redirectToHelloWorld() {
-  // Redirect to hello-world.html
-  window.location.href = "hello-world.html";
-}
