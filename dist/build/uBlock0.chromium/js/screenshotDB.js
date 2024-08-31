@@ -9,7 +9,7 @@ let request = indexedDB.open('screenshotDB', 1);
 let db = null;
 const modal = document.getElementById('myModal');
 const modalImage = document.getElementById('modalImage');
-const closeBtn = document.getElementsByClassName('close')[0];
+const defaultURL = "https://raw.githubusercontent.com/royg24/NewBlockOrigin/master/dist/build/uBlock0.chromium/assets/Images/unavailable.png";
 
     request.onerror = (event) =>{
         alert("an error was occured in indexedDB");
@@ -30,14 +30,14 @@ const closeBtn = document.getElementsByClassName('close')[0];
         console.log('success', db);
     };
 
-    export async function addRecordToDB(name, DataURL) {
+    export async function addRecordToDB(name, DataURL, PageURL) {
         if (!db) {
             console.error("Database not initialized.");
             return;
         }
         name = name.trim('\n');
         const blob = URLtoBlob(DataURL);
-        const sc = { name: name, blob: blob };
+        const sc = { name: name, blob: blob, url: PageURL };
         const tx = db.transaction("screenshots", "readwrite");
         const store = tx.objectStore("screenshots");
     
@@ -129,11 +129,22 @@ const closeBtn = document.getElementsByClassName('close')[0];
     
             req.onsuccess = async () => {
                 console.log("Screenshot pulled");
-                let imageURL = "https://raw.githubusercontent.com/royg24/NewBlockOrigin/master/dist/build/uBlock0.chromium/assets/Images/unavailable.png";
+                const urlbutton = document.getElementById("goToPage");
+                let imageURL;
                 if(req.result != undefined)
                 {
                     imageURL = await blobToURL(req.result.blob);
+                    urlbutton.disabled = false;
+                    const pageURL = req.result.url;
+                    urlbutton.onclick = () => {
+                        window.open(pageURL, '_blank');
+                    };
                 } 
+                else
+                {
+                    imageURL = defaultURL;
+                    urlbutton.disabled = true;
+                }
                 modalImage.src = imageURL;
                 modal.style.display = "block";
             };

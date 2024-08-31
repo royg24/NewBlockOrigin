@@ -492,7 +492,7 @@ const onPreviewClicked = function() {
 const onCreateClicked = async function() {
     const candidate = filterFromTextarea();
     const filter = userFilterFromCandidate(candidate);
-    await screenshotDB.addRecordToDB(filter, dataUrl);
+    await screenshotDB.addRecordToDB(filter, dataUrl, docURL.href);
     if ( filter !== undefined ) {
         vAPI.messaging.send('elementPicker', {
             what: 'createUserFilter',
@@ -510,20 +510,6 @@ const onCreateClicked = async function() {
             : undefined,
     });
 };
-
-async function takeScreenshot(filter) {
-    try {
-      const link = document.createElement('a');
-      //dataUrl value determined in onSvgClicked function
-      link.href = dataUrl;
-      link.download = `${JSON.stringify(filter)}.png`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    } catch (error) {
-      console.error('Error taking screenshot:', error);
-    }
-  }
 
 /******************************************************************************/
 

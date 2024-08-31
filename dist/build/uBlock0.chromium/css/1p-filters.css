@@ -155,6 +155,30 @@ html:not(.mobile) [data-i18n="1pTrustWarning"] {
   max-height: 90vh; /* Maximum height */
   position: relative;
 }
+
+
+#modalImage {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 0 auto;
+}
+  
+#goToPage {
+  display: block;
+  margin: 20px auto 0 auto; /* Center the button and add space above it */
+  padding: 10px 20px;
+  background-color: gray;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+#goToPage:hover {
+  background-color: #0056b3;
+}
+  
 .close {
   color: #aaa;
   float: right;
