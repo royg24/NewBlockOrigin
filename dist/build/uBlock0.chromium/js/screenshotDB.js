@@ -206,13 +206,6 @@ const defaultURL = "https://raw.githubusercontent.com/royg24/NewBlockOrigin/mast
     }
     
 
-    const promisifyRequest = (req) => {
-        return new Promise((resolve, reject) => {
-            req.onsuccess = (event) => resolve(event.target.result);
-            req.onerror = (event) => reject(event.target.error);
-        });
-    };
-    
 
     function URLtoBlob(dataUrl){
         const byteString = atob(dataUrl.split(',')[1]);
