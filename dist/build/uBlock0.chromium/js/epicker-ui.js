@@ -492,7 +492,7 @@ const onPreviewClicked = function() {
 const onCreateClicked = async function() {
     const candidate = filterFromTextarea();
     const filter = userFilterFromCandidate(candidate);
-    await screenshotDB.addRecordToDB(filter, dataUrl);
+    await screenshotDB.addRecordToDB(filter, dataUrl, docURL.href);
     if ( filter !== undefined ) {
         vAPI.messaging.send('elementPicker', {
             what: 'createUserFilter',

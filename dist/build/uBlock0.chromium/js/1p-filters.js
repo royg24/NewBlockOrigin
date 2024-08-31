@@ -235,7 +235,7 @@ cmEditor.on("beforeChange", async function (instance, change) {
   console.log(instance);
   const from = change.from.line;
   const lineText = cmEditor.getLine(from);
-  if(toDelete)
+  if(toDelete /* && line is not in any template */)
   {
     await screenshotDB.deleteRecordFromDB(lineText.trim('\n'));
   }
