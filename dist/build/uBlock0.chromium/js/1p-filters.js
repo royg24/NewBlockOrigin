@@ -32,6 +32,7 @@ import * as screenshotDB from "./screenshotDB.js";
 const cmEditor = CodeMirror(qs$("#userFilters"), {
   autoCloseBrackets: true,
   autofocus: true,
+
   extraKeys: {
     "Ctrl-Space": "autocomplete",
     Tab: "toggleComment",
@@ -51,10 +52,12 @@ const cmEditor = CodeMirror(qs$("#userFilters"), {
   styleActiveLine: {
     nonEmpty: true,
   },
+  readOnly: true
 });
 let templates = loadTemplatesFromLocalStorage();
 let toggleStates = [];
 let toDelete = false;
+let deleteMode = true;
 
 function helperIsLineCommented(lineNumber) {
   const lineContent = cmEditor.getLine(lineNumber);
@@ -169,19 +172,54 @@ function createTrashButton(lineNumber) {
   if (helperIsLineWithDate(lineContent)) return null;
 
   button.addEventListener("click", function () {
-    toDelete = true;
-    trashTooltip.style.display = "none";
-    cmEditor.replaceRange(
-      "",
-      { line: lineNumber, ch: 0 },
-      { line: lineNumber + 1, ch: 0 }
-    );
-    updateButtons();
-    applyChanges();
-    if (templates.length > 0) saveTemplatesToLocalStorage();
+    if(deleteMode){
+      toDelete = true;
+      trashTooltip.style.display = "none";
+      cmEditor.replaceRange(
+        "",
+        { line: lineNumber, ch: 0 },
+        { line: lineNumber + 1, ch: 0 }
+      );
+      updateButtons();
+      const removeLinesWithDateFollowedByEmpty = () => {
+        const totalLines = cmEditor.lineCount();
+        for (let i = 0; i < totalLines - 1; i++) {
+          const currentLineContent = cmEditor.getLine(i);
+          const nextLineContent = cmEditor.getLine(i + 1);
+          console.log(currentLineContent);
+          if (helperIsLineWithDate(currentLineContent) && nextLineContent.trim() === "") {
+            cmEditor.replaceRange(
+              "",
+              { line: i, ch: 0 },
+              { line: i + 1, ch: 0 }
+            );
+            // Adjust the loop index to account for the removed line
+            i--; // Check the new line at the current index
+          }
+        }
+      };
+    
+      // Remove lines with date followed by an empty line
+      removeLinesWithDateFollowedByEmpty();
+      applyChanges();
+      
+      if (templates.length > 0) saveTemplatesToLocalStorage();
+    }
+    else{
+      alert("delete abailable only in \"edit template mode\"");
+    }
   });
 
   return button;
+}
+
+function isFilterExists(filterName){
+    templates.forEach(template =>{
+      if(template.filters.includes(filterName)){
+        return true;
+      }
+    return false;
+    });
 }
 
 function CreateTooltipElement(id, message) {
@@ -230,7 +268,7 @@ updateButtons();
 cmEditor.on("beforeChange", async function (instance, change) {
   const from = change.from.line;
   const lineText = cmEditor.getLine(from);
-  if (toDelete) {
+  if (toDelete && !isFilterExists(lineText)) {
     await screenshotDB.deleteRecordFromDB(lineText.trim("\n"));
   }
   const addedLines = change.text.length - 1; // Subtract 1 to account for the original line
@@ -266,6 +304,8 @@ cmEditor.on("beforeChange", async function (instance, change) {
     saveTemplatesToLocalStorage();
   }
 
+  
+
   toggleStates = newToggleStates; // Copy the new array back to toggleStates
 });
 
@@ -295,8 +335,12 @@ document.getElementById("cancelTemplate").addEventListener("click", () => {
 document
   .getElementById("deleteTemplate")
   .addEventListener("click", deleteTemplate);
+  document
+  .getElementById("deleteTemplate")
+  .addEventListener("click", changeDeleteMode);
 
 document.getElementById("editTemplate").addEventListener("click", editTemplate);
+document.getElementById("editTemplate").addEventListener("click", ()=> deleteMode = true);
 
 document
   .getElementById("saveEditTemplate")
@@ -330,9 +374,19 @@ function createTemplate(templateName, filters) {
 
 function deleteTemplate() {
   const selectedTemplate = document.getElementById("templateList").value;
-  templates = templates.filter((t) => t.name !== selectedTemplate);
-  updateTemplateList();
-  saveTemplatesToLocalStorage();
+  if(selectedTemplate!='main'){
+    templates = templates.filter((t) => t.name !== selectedTemplate);
+    updateTemplateList();
+    saveTemplatesToLocalStorage();
+    applyTemplate('main');
+  }
+  else{
+    alert('cant delete main template')
+  }
+}
+
+function changeDeleteMode(){
+  deleteMode = templates.length == 0 || templates.length == 1;
 }
 
 function editTemplate() {
@@ -378,6 +432,7 @@ function updateTemplateList(selectedTemplateName) {
     option.value = template.name;
     option.textContent = template.name;
     templateList.appendChild(option);
+    changeDeleteMode();
   });
 
   // Set the selected template in the dropdown

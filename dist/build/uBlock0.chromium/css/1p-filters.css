@@ -99,6 +99,10 @@ html:not(.mobile) [data-i18n="1pTrustWarning"] {
   background-color: rgba(185, 190, 185, 0.562);
 }
 
+.iconified{
+  cursor: pointer;
+}
+
 .trash-button::before {
   content: "🗑️";
 }
@@ -172,7 +176,6 @@ html:not(.mobile) [data-i18n="1pTrustWarning"] {
   color: white;
   border: none;
   border-radius: 5px;
-  cursor: pointer;
 }
 
 #goToPage:hover {
