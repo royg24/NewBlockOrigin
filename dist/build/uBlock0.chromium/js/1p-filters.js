@@ -72,9 +72,51 @@ function helperIsLineWithDate(lineContent) {
   // const datePattern = /^! \d{4}-\d{2}-\d{2}/;
   // return datePattern.test(lineContent.trim());
 
-  const datePattern =
-    /^! \b(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\b \d{1,2}, \d{4}/;
+  const language = detectLanguage(lineContent);
+  const datePattern = getDatePatternForLanguage(language);
   return datePattern.test(lineContent.trim());
+}
+
+function detectLanguage(text) {
+  const languagePatterns = {
+      "en": /\b(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:tember)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)\b/,
+      "fr": /\b(?:Janv(?:ier)?|Fév(?:rier)?|Mar(?:s)?|Avr(?:il)?|Mai|Juin|Juil(?:let)?|Aoû(?:t)?|Sep(?:tembre)?|Oct(?:obre)?|Nov(?:embre)?|Déc(?:embre)?)\b/,
+      "he": /\b(?:ינואר|פברואר|מרץ|אפריל|מאי|יוני|יולי|אוגוסט|ספטמבר|אוקטובר|נובמבר|דצמבר)\b/,
+      "de": /\b(?:Jan(?:uar)?|Feb(?:ruar)?|Mär(?:z)?|Apr(?:il)?|Mai|Jun(?:i)?|Jul(?:i)?|Aug(?:ust)?|Sep(?:tember)?|Okt(?:ober)?|Nov(?:ember)?|Dez(?:ember)?)\b/,
+      "es": /\b(?:Ene(?:ro)?|Feb(?:rero)?|Mar(?:zo)?|Abr(?:il)?|May(?:o)?|Jun(?:io)?|Jul(?:io)?|Ago(?:sto)?|Sep(?:tiembre)?|Oct(?:ubre)?|Nov(?:iembre)?|Dic(?:iembre)?)\b/,
+      "zh": /\b(?:一月|二月|三月|四月|五月|六月|七月|八月|九月|十月|十一月|十二月)\b/
+  };
+
+  // Detect language based on patterns
+  for (const [lang, pattern] of Object.entries(languagePatterns)) {
+      if (pattern.test(text)) {
+          return lang;
+      }
+  }
+
+  // Default to English if no language detected
+  return "en";
+}
+
+function getDatePatternForLanguage(language) {
+  const monthPatterns = {
+      "en": "(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:tember)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)",
+      "fr": "(?:Janv(?:ier)?|Fév(?:rier)?|Mar(?:s)?|Avr(?:il)?|Mai|Juin|Juil(?:let)?|Aoû(?:t)?|Sep(?:tembre)?|Oct(?:obre)?|Nov(?:embre)?|Déc(?:embre)?)",
+      "he": "(?:ינואר|פברואר|מרץ|אפריל|מאי|יוני|יולי|אוגוסט|ספטמבר|אוקטובר|נובמבר|דצמבר)",
+      "de": "(?:Jan(?:uar)?|Feb(?:ruar)?|Mär(?:z)?|Apr(?:il)?|Mai|Jun(?:i)?|Jul(?:i)?|Aug(?:ust)?|Sep(?:tember)?|Okt(?:ober)?|Nov(?:ember)?|Dez(?:ember)?)",
+      "es": "(?:Ene(?:ro)?|Feb(?:rero)?|Mar(?:zo)?|Abr(?:il)?|May(?:o)?|Jun(?:io)?|Jul(?:io)?|Ago(?:sto)?|Sep(?:tiembre)?|Oct(?:ubre)?|Nov(?:iembre)?|Dic(?:iembre)?)",
+      "zh": "(?:一月|二月|三月|四月|五月|六月|七月|八月|九月|十月|十一月|十二月)"
+  };
+
+  const selectedMonthPattern = monthPatterns[language] || monthPatterns["en"]; // Fallback to English if language isn't matched.
+
+  // Updated regex to handle multiple formats and languages
+  const datePattern = new RegExp(
+      `^!\\s*(?:${selectedMonthPattern}\\s+\\d{1,2},\\s+\\d{4}|\\d{4}-\\d{2}-\\d{2}|\\d{2}\\/\\d{2}\\/\\d{4}|\\d{2}\\.\\d{2}\\.\\d{4})\\b`,
+      "i"
+  );
+
+  return datePattern;
 }
 
 function createViewButton(lineNumber) {
@@ -213,14 +255,23 @@ function createTrashButton(lineNumber) {
   return button;
 }
 
-function isFilterExists(filterName){
-    templates.forEach(template =>{
-      if(template.filters.includes(filterName)){
-        return true;
-      }
-    return false;
-    });
+function isFilterExists(filterName) {
+  const trimmedFilterName = filterName.trim();
+  let count = 0;
+
+  for (const template of templates) {
+    if (template.filters.includes(trimmedFilterName)) {
+      count++;
+    }
+    if (count >= 2) {
+      return true;
+    }
+  }
+
+  return false;
 }
+
+
 
 function CreateTooltipElement(id, message) {
   const tooltip = document.createElement("div");
@@ -268,7 +319,8 @@ updateButtons();
 cmEditor.on("beforeChange", async function (instance, change) {
   const from = change.from.line;
   const lineText = cmEditor.getLine(from);
-  if (toDelete && !isFilterExists(lineText)) {
+  const exists = isFilterExists(lineText);
+  if (toDelete && !exists) {
     await screenshotDB.deleteRecordFromDB(lineText.trim("\n"));
   }
   const addedLines = change.text.length - 1; // Subtract 1 to account for the original line
@@ -289,7 +341,6 @@ cmEditor.on("beforeChange", async function (instance, change) {
   }
 
   let newLinePlaceInChange = change.text.length - 3;
-
   if (
     templates.length > 0 &&
     !templates[0].filters.includes(change.text[newLinePlaceInChange])
@@ -303,7 +354,6 @@ cmEditor.on("beforeChange", async function (instance, change) {
     );
     saveTemplatesToLocalStorage();
   }
-
   
 
   toggleStates = newToggleStates; // Copy the new array back to toggleStates
@@ -346,7 +396,7 @@ document
   .getElementById("saveEditTemplate")
   .addEventListener("click", saveEditedTemplate);
 
-document.getElementById("applyTemplate").addEventListener("click", () => {
+document.getElementById("templateList").addEventListener("change", (event) => {
   const selectedTemplate = document.getElementById("templateList").value;
   applyTemplate(selectedTemplate);
 });

@@ -620,7 +620,7 @@ const renderPopup = function() {
     const canPick = popupData.canElementPicker && isFiltering;
 
     dom.cl.toggle('#gotoZap', 'canPick', canPick);
-    dom.cl.toggle('#gotoPick', 'canPick', canPick && popupData.userFiltersAreEnabled);
+    dom.cl.toggle('#gotoPick', 'canPick', canPick);
     dom.cl.toggle('#gotoReport', 'canPick', canPick);
 
     let blocked, total;
